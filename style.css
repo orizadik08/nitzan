@@ -356,3 +356,16 @@ html.experience-ready .scroll-hint {
    The floral gutters and scrolling remain locked until experience-ready. */
 html:not(.hint-visible) .scroll-hint { visibility:hidden; opacity:0; animation:none; }
 html.hint-visible .scroll-hint { visibility:visible; animation:hint-appear 1s ease 0s forwards; }
+
+/* V22: discreet floating music control, independent of scrolling */
+.music-toggle {position:fixed;right:max(12px, env(safe-area-inset-right));bottom:max(18px, env(safe-area-inset-bottom));z-index:1000;width:52px;height:52px;display:flex;align-items:center;justify-content:center;gap:3px;border:1px solid rgba(172,119,75,.55);border-radius:50%;background:rgba(255,241,225,.89);color:#956943;box-shadow:0 5px 20px rgba(100,60,35,.16);cursor:pointer;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);touch-action:manipulation;}
+.music-toggle .music-symbol {font-size:24px;line-height:1;}
+.music-toggle .music-status {font-size:12px;line-height:1;font-weight:bold;}
+.music-toggle[aria-pressed="true"] {background:rgba(255,233,210,.96);}
+.music-toggle:focus-visible {outline:3px solid #9d704a;outline-offset:3px;}
+
+/* V23: place the music button on the opposite (left) edge. */
+.music-toggle {
+  right: auto !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+}
