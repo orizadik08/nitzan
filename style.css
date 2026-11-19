@@ -1,0 +1,358 @@
+
+:root { color-scheme:light; --paper:#f8e9dc; }
+* { box-sizing:border-box; }
+html,body { width:100%; height:100%; margin:0; overflow:hidden; background:var(--paper); }
+body { overscroll-behavior:none; }
+.stage {
+ position:fixed; left:50%; top:50%;
+ width:min(100vw, calc(100dvh * 851 / 1848));
+ height:min(100dvh, calc(100vw * 1848 / 851));
+ aspect-ratio:851/1848; transform:translate(-50%,-50%);
+ perspective:1250px; perspective-origin:50% 50%;
+ isolation:isolate; overflow:visible; background:var(--paper);
+}
+.card { position:absolute; inset:0; background:url('assets/invitation.jpg') center/100% 100% no-repeat; }
+.folds { position:absolute; inset:0; pointer-events:none; transform-style:preserve-3d; }
+/* Every flap has its own physical dimensions. Only the face is clipped.
+   The hinge rotates the sized flap, not a full-envelope clipped rectangle. */
+.flap { position:absolute; transform-style:preserve-3d; backface-visibility:visible; -webkit-backface-visibility:visible; will-change:transform; }
+.flap-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; background-image:url('assets/envelope.jpg'); background-repeat:no-repeat; box-shadow:inset 0 0 2px #bd957344; }
+.flap-top { left:0; top:0; width:100%; height:50%; transform-origin:50% 0%; z-index:5; }
+.flap-top .flap-face { clip-path:polygon(0 0,100% 0,50% 94%); background-size:100% 200%; background-position:center top; }
+.flap-bottom { left:0; bottom:0; width:100%; height:50%; transform-origin:50% 100%; z-index:4; }
+.flap-bottom .flap-face { clip-path:polygon(50% 6%,100% 100%,0 100%); background-size:100% 200%; background-position:center bottom; }
+.flap-left { left:0; top:0; width:50%; height:100%; transform-origin:0 50%; z-index:3; }
+.flap-left .flap-face { clip-path:polygon(0 0,100% 50%,0 100%); background-size:200% 100%; background-position:left center; }
+.flap-right { right:0; top:0; width:50%; height:100%; transform-origin:100% 50%; z-index:3; }
+.flap-right .flap-face { clip-path:polygon(100% 0,0 50%,100% 100%); background-size:200% 100%; background-position:right center; }
+/* A temporary exact cover masks tiny seams before the animation starts. */
+.envelope-cover { position:absolute; inset:0; z-index:8; background:url('assets/envelope.jpg') center/100% 100% no-repeat; transition:opacity .32s ease,visibility 0s linear .33s; }
+.stage.open .envelope-cover { opacity:0; visibility:hidden; }
+.seal { display:none; }
+.light { position:absolute; inset:0; z-index:9; pointer-events:none; opacity:0; background:radial-gradient(ellipse at 50% 50%,#fff8e780,transparent 65%); }
+.stage.open .light { animation:light-pass 2s ease 1.7s both; }
+@keyframes light-pass { 0%,100%{opacity:0} 50%{opacity:.55} }
+/* Opening a top flap toward the viewer: hinge is its upper edge.
+   Bottom flap hinges on its bottom edge; side flaps on outer edges. */
+.stage.open .flap-top { animation:top-hinge 2.25s cubic-bezier(.35,.05,.16,1) .45s both; }
+.stage.open .flap-bottom { animation:bottom-hinge 2.25s cubic-bezier(.35,.05,.16,1) .75s both; }
+.stage.open .flap-left { animation:left-hinge 2.55s cubic-bezier(.35,.05,.16,1) 1.25s both; }
+.stage.open .flap-right { animation:right-hinge 2.55s cubic-bezier(.35,.05,.16,1) 1.25s both; }
+@keyframes top-hinge { 0%{transform:rotateX(0);opacity:1} 82%{opacity:1} 100%{transform:rotateX(-168deg);opacity:0} }
+@keyframes bottom-hinge { 0%{transform:rotateX(0);opacity:1} 82%{opacity:1} 100%{transform:rotateX(168deg);opacity:0} }
+@keyframes left-hinge { 0%{transform:rotateY(0deg);opacity:1} 100%{transform:rotateY(38deg);opacity:1} }
+@keyframes right-hinge { 0%{transform:rotateY(0deg);opacity:1} 100%{transform:rotateY(-38deg);opacity:1} }
+@media(prefers-reduced-motion:reduce){.stage.open .flap{animation-duration:.7s;animation-delay:0s}.stage.open .light{animation:none}}
+
+/* Keep both side wings visible and open after animation finishes. */
+.stage.open .flap-left, .stage.open .flap-right { animation-fill-mode:forwards; }
+
+/* V6: side panels remain clearly visible, like the reference invitation.
+   A smaller final hinge angle shows more of each panel's surface. */
+.flap-left, .flap-right { filter: drop-shadow(0 8px 9px rgba(103,65,39,.13)); }
+.stage.open .flap-left { animation-name:left-wide-open; }
+.stage.open .flap-right { animation-name:right-wide-open; }
+@keyframes left-wide-open {
+  0% {transform:rotateY(0deg)}
+  55% {transform:rotateY(53deg)}
+  100% {transform:rotateY(38deg)}
+}
+@keyframes right-wide-open {
+  0% {transform:rotateY(0deg)}
+  55% {transform:rotateY(-53deg)}
+  100% {transform:rotateY(-38deg)}
+}
+
+/* V7: side wings swing OUT of the invitation, then remain open.
+   Unlike V6, their final position is outside the central card. */
+.flap-left, .flap-right { filter:none; }
+.stage.open .flap-left {
+  animation: left-fully-open 3.15s cubic-bezier(.22,.75,.18,1) 1.15s both;
+}
+.stage.open .flap-right {
+  animation: right-fully-open 3.15s cubic-bezier(.22,.75,.18,1) 1.15s both;
+}
+@keyframes left-fully-open {
+  0%   {transform:translateX(0) rotateY(0deg); opacity:1}
+  35%  {transform:translateX(-18%) rotateY(67deg); opacity:1}
+  75%  {transform:translateX(-83%) rotateY(30deg); opacity:1}
+  100% {transform:translateX(-93%) rotateY(18deg); opacity:1}
+}
+@keyframes right-fully-open {
+  0%   {transform:translateX(0) rotateY(0deg); opacity:1}
+  35%  {transform:translateX(18%) rotateY(-67deg); opacity:1}
+  75%  {transform:translateX(83%) rotateY(-30deg); opacity:1}
+  100% {transform:translateX(93%) rotateY(-18deg); opacity:1}
+}
+/* Folded top and bottom are removed from view after their hinge swing. */
+.stage.open .flap-top { animation:top-hinge 2.25s cubic-bezier(.35,.05,.16,1) .45s forwards; }
+.stage.open .flap-bottom { animation:bottom-hinge 2.25s cubic-bezier(.35,.05,.16,1) .75s forwards; }
+@media (prefers-reduced-motion:reduce) {
+  .stage.open .flap-left {animation-duration:.8s;animation-delay:0s}
+  .stage.open .flap-right {animation-duration:.8s;animation-delay:0s}
+}
+
+/* V8: actual back sides of side wings, hinged beyond 90 degrees.
+   No sideways translation: the inner faces remain visible after opening. */
+.flap-left,.flap-right { filter:none; transform-style:preserve-3d; }
+.flap-inside {
+  position:absolute; inset:0;
+  background:linear-gradient(115deg,#e9cdb8 0%,#fff2e6 28%,#f5dfcd 70%,#dfbfa6 100%);
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  transform:rotateY(180deg) translateZ(1px);
+  box-shadow:inset 0 0 0 2px #d7ae8d,inset 0 0 18px #c9996a60;
+  overflow:hidden;
+}
+.flap-left .flap-inside {clip-path:polygon(0 0,100% 50%,0 100%);}
+.flap-right .flap-inside {clip-path:polygon(100% 0,0 50%,100% 100%);}
+.flap-inside::before {
+ content:''; position:absolute; inset:3%;
+ border:2px solid #d2a882; filter:drop-shadow(1px 1px 1px #fff);
+}
+.inside-ornament {
+ position:absolute; left:12%; top:38%; width:76%; height:24%;
+ background:url('assets/inner-ornament.png') center/contain no-repeat;
+ opacity:.48; mix-blend-mode:multiply;
+}
+.stage.open .flap-left {animation:left-inside-open 3.1s cubic-bezier(.2,.72,.19,1) 1.15s forwards;}
+.stage.open .flap-right {animation:right-inside-open 3.1s cubic-bezier(.2,.72,.19,1) 1.15s forwards;}
+@keyframes left-inside-open {
+ 0%{transform:rotateY(0deg)} 65%{transform:rotateY(-134deg)} 83%{transform:rotateY(-117deg)} 100%{transform:rotateY(-122deg)}
+}
+@keyframes right-inside-open {
+ 0%{transform:rotateY(0deg)} 65%{transform:rotateY(134deg)} 83%{transform:rotateY(117deg)} 100%{transform:rotateY(122deg)}
+}
+@media(prefers-reduced-motion:reduce){
+ .stage.open .flap-left,.stage.open .flap-right{animation-duration:.8s;animation-delay:0s}
+}
+
+/* V9: Inner wings are a continuation of the actual floral frame of invitation 2.
+   Each uses a real extracted left/right border with a soft fade to cream.
+   The back of the flap is mirrored by rotateY(180deg), so use the opposite
+   source edge to keep the visible floral decoration next to the central card. */
+.flap-left .flap-inside {
+  background: #f8e9dc url('assets/inside-right-floral.webp') center/100% 100% no-repeat;
+}
+.flap-right .flap-inside {
+  background: #f8e9dc url('assets/inside-left-floral.webp') center/100% 100% no-repeat;
+}
+/* Remove the unrelated medallion and generic inset frame from V8. */
+.flap-inside::before, .inside-ornament {display:none !important;}
+.flap-inside {box-shadow:inset 0 0 12px rgba(138,92,62,.10);}
+
+/* V10: full-height, full-width botanical relief on BOTH inner wings.
+   Source: the actual floral relief along the outer margins of invitation image 2.
+   Back faces are flipped by rotateY(180deg), so sources are swapped. */
+.flap-left .flap-inside {
+  background: #f7e4d4 url('assets/full-right-floral.webp') center / 100% 100% no-repeat !important;
+}
+.flap-right .flap-inside {
+  background: #f7e4d4 url('assets/full-left-floral.webp') center / 100% 100% no-repeat !important;
+}
+.flap-inside::before, .inside-ornament { display:none !important; }
+.flap-inside { box-shadow: inset 0 0 16px rgba(139,88,56,.16); }
+
+/* V11: full, seamless interior faces; hinged outward to expose the reverse.
+   Keep the triangular silhouette ONLY on the exterior front of the closed envelope.
+   The interior is a full decorated panel with no triangular gaps. */
+.flap-left .flap-inside,
+.flap-right .flap-inside {
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  border: 0;
+  border-radius: 0;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  background-position: center center !important;
+  box-shadow: inset 0 0 0 1px rgba(180,126,89,.25), inset 0 0 20px rgba(133,88,57,.13);
+}
+.flap-left .flap-inside { background-image: url('assets/wing-right-continuous.webp') !important; }
+.flap-right .flap-inside { background-image: url('assets/wing-left-continuous.webp') !important; }
+/* The left flap hinges from the left edge, the right flap from the right edge.
+   At ~160 degrees both wings are almost fully unfolded OUTWARD, and stay there. */
+.stage.open .flap-left {
+  animation: v11-left-out 3.2s cubic-bezier(.22,.75,.16,1) 1.15s forwards !important;
+}
+.stage.open .flap-right {
+  animation: v11-right-out 3.2s cubic-bezier(.22,.75,.16,1) 1.15s forwards !important;
+}
+@keyframes v11-left-out {
+  0% {transform:rotateY(0deg)}
+  72% {transform:rotateY(-169deg)}
+  100% {transform:rotateY(-158deg)}
+}
+@keyframes v11-right-out {
+  0% {transform:rotateY(0deg)}
+  72% {transform:rotateY(169deg)}
+  100% {transform:rotateY(158deg)}
+}
+@media (prefers-reduced-motion: reduce) {
+ .stage.open .flap-left,.stage.open .flap-right { animation-duration:.8s !important; animation-delay:0s !important; }
+}
+
+/* V12 — full embossed florals edge-to-edge on both interior wing faces.
+   No central blank strip, no paper inset, no repeated rectangular frame. */
+.flap-left .flap-inside, .flap-right .flap-inside {
+  clip-path:none !important; -webkit-clip-path:none !important;
+  background-color:#f3d9c4 !important;
+  background-position:center !important;
+  background-repeat:no-repeat !important;
+  background-size:100% 100% !important;
+  border:0 !important; border-radius:0 !important;
+  box-shadow:inset 0 0 10px rgba(109,63,35,.15) !important;
+}
+.flap-left .flap-inside {background-image:url('assets/floral-full-right.webp') !important;}
+.flap-right .flap-inside {background-image:url('assets/floral-full-left.webp') !important;}
+.flap-inside::before,.inside-ornament {display:none !important;}
+
+/* V13: vertical story, with original V12 folding stage kept intact. */
+html, body {height:auto !important; min-height:100%; overflow-x:hidden !important; overflow-y:auto !important;}
+html {scroll-behavior:smooth; scroll-snap-type:y proximity;}
+body {overscroll-behavior-y:auto !important;}
+.page {position:relative; width:100%; min-height:100svh; scroll-snap-align:start; background:#f8e9dc;}
+.page-intro {height:100svh; overflow:hidden;}
+.page-intro .stage {position:absolute;}
+.page-image {display:flex; align-items:center; justify-content:center; overflow:hidden;}
+.page-image img {display:block; width:auto; height:auto; max-width:100%; max-height:100svh; object-fit:contain;}
+.scroll-hint {position:absolute; bottom:max(14px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); z-index:12; pointer-events:none; opacity:0; color:#946e52; font:13px Arial,sans-serif; letter-spacing:.03em; white-space:nowrap; text-shadow:0 1px 2px #fff8; animation:hint-appear 1s ease 4.7s forwards;}
+.scroll-hint span {display:block; text-align:center; font-size:25px; line-height:1; animation:hint-bob 1.7s ease-in-out infinite;}
+@keyframes hint-appear {to{opacity:.85}}
+@keyframes hint-bob {50%{transform:translateY(4px)}}
+@media (prefers-reduced-motion:reduce) {html{scroll-behavior:auto}.scroll-hint span{animation:none}}
+
+/* V14: invisible, accessible click target over the OPEN MAPS artwork.
+   The image remains proportional and the hotspot scales with it. */
+.location-artwork { position:relative; width:min(100vw, calc(100svh * 850 / 1850)); aspect-ratio:850 / 1850; flex:none; }
+.location-artwork > img {display:block; width:100%; height:100%; max-width:none; max-height:none; object-fit:fill;}
+.maps-hotspot {position:absolute; left:21%; top:67.5%; width:58%; height:14.5%; display:block; border-radius:45%; cursor:pointer; z-index:2; -webkit-tap-highlight-color:rgba(158,111,75,.2);}
+.maps-hotspot:focus-visible {outline:3px solid #a66c40; outline-offset:3px;}
+
+/* V15: small decorative scroll prompt matching the OPEN MAPS ornament.
+   The original text was removed from the artwork and replaced by live Hebrew text. */
+.scroll-hint {
+  box-sizing:border-box;
+  width:clamp(148px, 41vw, 188px);
+  height:auto;
+  aspect-ratio:267 / 152;
+  bottom:max(8px, env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:16px 12px 12px;
+  background: url('assets/scroll-frame.webp') center / 100% 100% no-repeat;
+  color:#8f603e;
+  text-shadow:0 1px 1px rgba(255,250,244,.8);
+  font-family:Georgia,'Times New Roman',serif;
+  font-size:clamp(12px,3.4vw,15px);
+  font-weight:600;
+  letter-spacing:0;
+  line-height:1.05;
+  white-space:nowrap;
+}
+.scroll-hint .scroll-hint-label {display:block;}
+.scroll-hint .scroll-hint-arrow {display:block; font-size:22px; line-height:.85; margin-top:2px; animation:hint-bob 1.7s ease-in-out infinite;}
+@media (prefers-reduced-motion:reduce){.scroll-hint .scroll-hint-arrow{animation:none}}
+
+/* V16: smaller label and transparent exterior around the ornate scroll frame. */
+.scroll-hint {
+  background-image:url('assets/scroll-frame-transparent.png');
+  font-size:clamp(10px, 2.5vw, 12px);
+  font-weight:500;
+  text-shadow:0 1px 2px rgba(255,248,240,.75);
+}
+.scroll-hint .scroll-hint-arrow {font-size:18px;}
+
+
+/* V17: Continue the actual embossed floral border into the side gutters.
+   Each strip is reflected from the corresponding original image edge.
+   No solid cream rectangles or floating pattern tiles. */
+.page-image { background:#f2d8c4; isolation:isolate; }
+.page-image::before, .page-image::after {
+  content:""; position:absolute; top:0; bottom:0; width:50%;
+  z-index:0; pointer-events:none; background-repeat:repeat-x;
+  background-size:auto 100%;
+}
+.page-image::before {left:0; background-position:right center;}
+.page-image::after {right:0; background-position:left center;}
+#location::before {background-image:url('assets/location-floral-left.webp');}
+#location::after {background-image:url('assets/location-floral-right.webp');}
+#calendar::before {background-image:url('assets/calendar-floral-left.webp');}
+#calendar::after {background-image:url('assets/calendar-floral-right.webp');}
+.page-image > img, .location-artwork {position:relative; z-index:1;}
+
+/* V18: ONE shared floral border scale on every page, matching invitation.jpg.
+   Only the original 48px botanical margins are reflected outward;
+   no inset paper or white framed panels are repeated. */
+.page { --art-width:min(100vw, calc(100svh * 851 / 1848)); }
+#location { --art-width:min(100vw, calc(100svh * 850 / 1850)); }
+.page-intro, .page-image {background:#efcfb8; isolation:isolate;}
+.page-intro::before,.page-intro::after,
+.page-image::before,.page-image::after {
+ content:""; position:absolute; top:0; bottom:0;
+ width:max(0px, calc((100% - var(--art-width)) / 2));
+ pointer-events:none; z-index:0;
+ background-repeat:repeat-x;
+ background-size:calc(100svh * 96 / 1848) 100%;
+}
+.page-intro::before,.page-image::before {
+ left:0; right:auto;
+ background-image:url('assets/floral-gutter-left.webp');
+ background-position:right top;
+}
+.page-intro::after,.page-image::after {
+ right:0; left:auto;
+ background-image:url('assets/floral-gutter-right.webp');
+ background-position:left top;
+}
+.page-intro .stage,.page-image > img,.location-artwork {z-index:1;}
+
+/* V19 — Continue the SAME large embossed flower panels from the opening page.
+   Never stretch a 96px strip to fill the viewport: that produced vertical lines.
+   These are the original full-width floral panels used on the open wings. */
+.page-intro::before, .page-intro::after,
+.page-image::before, .page-image::after {
+  background-size: auto 100svh !important;
+  background-repeat: repeat-x !important;
+  background-color: #f0d2bc;
+}
+.page-intro::before, .page-image::before {
+  background-image: url('assets/floral-full-left.webp') !important;
+  background-position: right top !important;
+}
+.page-intro::after, .page-image::after {
+  background-image: url('assets/floral-full-right.webp') !important;
+  background-position: left top !important;
+}
+/* Keep the page's main image exactly its natural aspect ratio. */
+.page-image > img, .location-artwork {z-index:1;}
+
+/* V20: keep the opening envelope clean; reveal floral side panels only
+   after the hinges finish. Do not allow scrolling before that moment. */
+html:not(.experience-ready),
+html:not(.experience-ready) body {
+  overflow-y: hidden !important;
+  overscroll-behavior-y: none !important;
+}
+.page-intro::before, .page-intro::after {
+  opacity: 0;
+  transition: opacity 850ms ease;
+}
+html.experience-ready .page-intro::before,
+html.experience-ready .page-intro::after {
+  opacity: 1;
+}
+html:not(.experience-ready) .scroll-hint {
+  visibility: hidden;
+}
+html.experience-ready .scroll-hint {
+  visibility: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-intro::before, .page-intro::after { transition-duration: 0.01ms; }
+}
+
+/* V21: show the framed scroll hint two seconds before scrolling is unlocked.
+   The floral gutters and scrolling remain locked until experience-ready. */
+html:not(.hint-visible) .scroll-hint { visibility:hidden; opacity:0; animation:none; }
+html.hint-visible .scroll-hint { visibility:visible; animation:hint-appear 1s ease 0s forwards; }
